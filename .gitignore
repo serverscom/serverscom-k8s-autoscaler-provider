@@ -1,0 +1,5 @@
+vendor
+build
+cp.out
+serverscom-k8s-autoscaler-provider
+deploy
