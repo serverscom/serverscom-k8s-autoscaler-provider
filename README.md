@@ -1,5 +1,7 @@
 # serverscom-k8s-autoscaler-provider
 
+![test](https://github.com/serverscom/serverscom-k8s-autoscaler-provider/actions/workflows/test.yml/badge.svg)
+
 An [external gRPC cloud provider](https://github.com/kubernetes-sigs/cluster-autoscaler/tree/562c02c17afedc1a1699b6c772018c009e790e41/pkg/cloudprovider/externalgrpc)
 for the Kubernetes cluster-autoscaler, backed by the Servers.com Public API.
 
@@ -122,7 +124,6 @@ cluster, are in [deploy/](deploy/README.md).
 make generate   # regenerates the gRPC bindings and the mocks
 make build
 make test
-make vet
 ```
 
 `make generate` needs `protoc`, `protoc-gen-go`, `protoc-gen-go-grpc` and `mockgen` on `PATH`.
