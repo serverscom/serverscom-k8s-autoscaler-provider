@@ -115,9 +115,6 @@ grpc_timeout: 10s
 `grpc_timeout` arrives here as the deadline of every call and takes precedence over
 `--api-timeout`.
 
-Example manifests, and a walkthrough for running the whole thing against a stub API in a local
-cluster, are in [deploy/](deploy/README.md).
-
 ## Development
 
 ```
