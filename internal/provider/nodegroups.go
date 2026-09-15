@@ -8,15 +8,20 @@ import (
 	"github.com/serverscom/serverscom-k8s-autoscaler-provider/internal/protos"
 )
 
-// NodeGroups lists the autoscale node groups of the cluster.
+// NodeGroups lists the autoscale node groups of the cluster whose autoscaling is switched on.
 //
-// Static node groups are not returned by this endpoint at all, so the autoscaler never sees
-// them and cannot touch them.
+// Two kinds of group are kept away from the autoscaler here. Static node groups are not
+// returned by this endpoint at all, so it never sees them. Groups whose owner has switched
+// autoscaling off are filtered out by the API, because the autoscaler must neither grow nor
+// shrink them.
 func (p *Provider) NodeGroups(ctx context.Context, _ *protos.NodeGroupsRequest) (*protos.NodeGroupsResponse, error) {
 	ctx, cancel := p.callContext(ctx)
 	defer cancel()
 
-	groups, err := p.api.AutoscaleNodeGroups(p.clusterID).SetPerPage(perPage).Collect(ctx)
+	groups, err := p.api.AutoscaleNodeGroups(p.clusterID).
+		SetParam(autoscaleEnabledParam, "true").
+		SetPerPage(perPage).
+		Collect(ctx)
 	if err != nil {
 		klog.V(1).Infof("NodeGroups: cannot list autoscale node groups of cluster %s: %v", p.clusterID, err)
 		return nil, toGRPCError(ctx, err)
@@ -35,8 +40,9 @@ func (p *Provider) NodeGroups(ctx context.Context, _ *protos.NodeGroupsRequest) 
 // NodeGroupForNode resolves which autoscale group a cluster node belongs to.
 //
 // A node group with an empty id tells the autoscaler the node is none of its business. That is
-// the answer for masters, for nodes of static groups, for nodes of another cluster and for
-// nodes whose providerID we cannot read - all of them are normal, so none of them is an error.
+// the answer for masters, for nodes of static groups, for nodes of a group whose autoscaling is
+// switched off, for nodes of another cluster and for nodes whose providerID we cannot read -
+// all of them are normal, so none of them is an error.
 func (p *Provider) NodeGroupForNode(ctx context.Context, req *protos.NodeGroupForNodeRequest) (*protos.NodeGroupForNodeResponse, error) {
 	node := req.GetNode()
 	if node == nil {
@@ -94,6 +100,16 @@ func (p *Provider) NodeGroupForNode(ctx context.Context, req *protos.NodeGroupFo
 			"NodeGroupForNode: cannot get autoscale node group %s of cluster %s: %v",
 			apiNode.NodeGroup.ID, p.clusterID, err)
 		return nil, toGRPCError(ctx, err)
+	}
+
+	// The listing filter does not reach this path: a group fetched by id comes back whether its
+	// autoscaling is on or off. Without this check, a group switched off after the autoscaler
+	// adopted its nodes would keep its bounds and stay scalable.
+	if !group.AutoscaleEnabled {
+		klog.V(5).Infof(
+			"NodeGroupForNode: autoscale node group %s has autoscaling switched off, reporting no node group",
+			group.ID)
+		return unmanagedNodeGroup(), nil
 	}
 
 	return &protos.NodeGroupForNodeResponse{NodeGroup: pbNodeGroup(group)}, nil

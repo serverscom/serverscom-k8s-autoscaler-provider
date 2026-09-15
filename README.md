@@ -26,7 +26,7 @@ hardware twice.
 
 | RPC | Public API |
 |---|---|
-| `NodeGroups` | `GET  /kubernetes_clusters/{id}/autoscale_node_groups` |
+| `NodeGroups` | `GET  /kubernetes_clusters/{id}/autoscale_node_groups?autoscale_enabled=true` |
 | `NodeGroupForNode` | `GET  .../nodes/{node_id}` then `GET .../autoscale_node_groups/{id}` |
 | `NodeGroupTargetSize` | `GET  .../autoscale_node_groups/{id}` -> `target_nodes` |
 | `NodeGroupIncreaseSize` | `POST .../increase_size` |
@@ -41,6 +41,18 @@ hardware twice.
 The autoscaler passes a **negative** delta to `NodeGroupDecreaseTargetSize` while
 `decrease_target_size` takes a positive one; the sign is converted explicitly and a
 non-negative delta is rejected before any API call is made.
+
+### Switched-off groups
+
+Autoscaling can be switched off per group through the API or the portal. Such a group is
+invisible to the autoscaler on **both** paths that reach a group: the listing is filtered with
+`autoscale_enabled=true`, and `NodeGroupForNode` - which fetches a group by id, where the filter
+does not apply - checks the flag itself and reports the node as belonging to no node group at
+all, the same answer masters and nodes of static groups get.
+
+Both paths matter, because a group can be switched off while its nodes are already in the
+cluster. Those nodes then stay put: the autoscaler neither adds to nor drains the group until
+autoscaling is switched back on.
 
 ### Node states
 
@@ -129,7 +141,8 @@ The contract this provider is written against is pinned and vendored, see [proto
 ## Not covered
 
 Creating and deleting node groups (the autoscaler only moves existing ones within their bounds),
-changing the location or flavour of an existing group, labels and taints in the node template,
+switching autoscaling on or off for a group (the provider only reads the flag, the owner sets
+it), changing the location or flavour of an existing group, labels and taints in the node template,
 reporting provisioning failures, the price expander, GPU support, per-node-group autoscaling
 options, retries or compensating logic, transport security, health checking, static node groups,
 and serving several clusters from one instance.

@@ -14,13 +14,16 @@ import (
 	serverscom_testing "github.com/serverscom/serverscom-k8s-autoscaler-provider/internal/testing"
 )
 
-// expectNodeGroups wires one paginated listing of the autoscale groups of the cluster.
+// expectNodeGroups wires one paginated listing of the autoscale groups of the cluster. The
+// SetParam expectation is what keeps the autoscale_enabled filter on the request: gomock fails
+// the call if the provider stops sending it.
 func expectNodeGroups(t *testing.T, api *serverscom_testing.MockKubernetesClustersService, groups []serverscom.KubernetesClusterAutoscaleNodeGroup) {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
 	collection := serverscom_testing.NewMockCollection[serverscom.KubernetesClusterAutoscaleNodeGroup](ctrl)
 
+	collection.EXPECT().SetParam(autoscaleEnabledParam, "true").Return(collection)
 	collection.EXPECT().SetPerPage(perPage).Return(collection)
 	collection.EXPECT().Collect(gomock.Any()).Return(groups, nil)
 
@@ -103,6 +106,39 @@ func TestNodeGroupForNode(t *testing.T) {
 	g.Expect(res.GetNodeGroup().GetId()).To(Equal(testGroupID))
 	g.Expect(res.GetNodeGroup().GetMinSize()).To(Equal(int32(1)))
 	g.Expect(res.GetNodeGroup().GetMaxSize()).To(Equal(int32(5)))
+}
+
+// Switching autoscaling off has to reach the autoscaler through this RPC too, not only through
+// the filtered listing: the group is fetched by id here, so the API returns it regardless, and
+// reporting it would leave the autoscaler free to grow and shrink a group its owner has
+// switched off.
+func TestNodeGroupForNodeDisabledGroup(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	p, api := newTestProvider(t)
+
+	api.EXPECT().
+		GetNode(gomock.Any(), testClusterID, "node1").
+		Return(&serverscom.KubernetesClusterNode{
+			ID:        "node1",
+			Status:    "active",
+			NodeGroup: serverscom.KubernetesClusterNodeGroupInfo{ID: testGroupID, Type: autoscaleGroupType},
+		}, nil)
+
+	group := testGroup(1, 5, 2, 2)
+	group.AutoscaleEnabled = false
+
+	api.EXPECT().
+		GetAutoscaleNodeGroup(gomock.Any(), testClusterID, testGroupID).
+		Return(group, nil).
+		Times(1)
+
+	res, err := p.NodeGroupForNode(context.Background(), &protos.NodeGroupForNodeRequest{
+		Node: &protos.ExternalGrpcNode{Name: "node-1", ProviderID: buildProviderID(testClusterID, "node1")},
+	})
+
+	g.Expect(err).To(BeNil())
+	g.Expect(res.GetNodeGroup().GetId()).To(BeEmpty())
 }
 
 // An empty node group id means "not the autoscaler's business". Masters, nodes of static
