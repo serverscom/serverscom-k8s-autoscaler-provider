@@ -171,6 +171,36 @@ func (mr *MockKubernetesClustersServiceMockRecorder) DeleteNodeGroup(ctx, cluste
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNodeGroup", reflect.TypeOf((*MockKubernetesClustersService)(nil).DeleteNodeGroup), ctx, clusterID, nodeGroupID)
 }
 
+// DisableAutoscaleNodeGroup mocks base method.
+func (m *MockKubernetesClustersService) DisableAutoscaleNodeGroup(ctx context.Context, clusterID, nodeGroupID string) (*serverscom.KubernetesClusterAutoscaleNodeGroup, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DisableAutoscaleNodeGroup", ctx, clusterID, nodeGroupID)
+	ret0, _ := ret[0].(*serverscom.KubernetesClusterAutoscaleNodeGroup)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DisableAutoscaleNodeGroup indicates an expected call of DisableAutoscaleNodeGroup.
+func (mr *MockKubernetesClustersServiceMockRecorder) DisableAutoscaleNodeGroup(ctx, clusterID, nodeGroupID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DisableAutoscaleNodeGroup", reflect.TypeOf((*MockKubernetesClustersService)(nil).DisableAutoscaleNodeGroup), ctx, clusterID, nodeGroupID)
+}
+
+// EnableAutoscaleNodeGroup mocks base method.
+func (m *MockKubernetesClustersService) EnableAutoscaleNodeGroup(ctx context.Context, clusterID, nodeGroupID string) (*serverscom.KubernetesClusterAutoscaleNodeGroup, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnableAutoscaleNodeGroup", ctx, clusterID, nodeGroupID)
+	ret0, _ := ret[0].(*serverscom.KubernetesClusterAutoscaleNodeGroup)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EnableAutoscaleNodeGroup indicates an expected call of EnableAutoscaleNodeGroup.
+func (mr *MockKubernetesClustersServiceMockRecorder) EnableAutoscaleNodeGroup(ctx, clusterID, nodeGroupID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableAutoscaleNodeGroup", reflect.TypeOf((*MockKubernetesClustersService)(nil).EnableAutoscaleNodeGroup), ctx, clusterID, nodeGroupID)
+}
+
 // Get mocks base method.
 func (m *MockKubernetesClustersService) Get(ctx context.Context, id string) (*serverscom.KubernetesCluster, error) {
 	m.ctrl.T.Helper()

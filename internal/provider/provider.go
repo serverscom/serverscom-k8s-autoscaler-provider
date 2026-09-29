@@ -27,6 +27,11 @@ import (
 // which keeps the number of round trips per autoscaler loop down.
 const perPage = 100
 
+// autoscaleEnabledParam filters a group listing down to the groups whose owner has switched
+// autoscaling on. It only works on the listing - a group fetched by id comes back whatever the
+// flag says - so NodeGroupForNode checks the flag itself.
+const autoscaleEnabledParam = "autoscale_enabled"
+
 // autoscaleGroupType is the node group type the autoscaler is allowed to touch. Static groups
 // carry a different type and are invisible to this provider.
 const autoscaleGroupType = "autoscale"

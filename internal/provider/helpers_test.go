@@ -28,13 +28,14 @@ func newTestProvider(t *testing.T) (*Provider, *serverscom_testing.MockKubernete
 
 func testGroup(minNodes, maxNodes, target, current int64) *serverscom.KubernetesClusterAutoscaleNodeGroup {
 	return &serverscom.KubernetesClusterAutoscaleNodeGroup{
-		ID:           testGroupID,
-		Name:         "node-group-97",
-		Type:         autoscaleGroupType,
-		NodeType:     "sbm",
-		MinNodes:     minNodes,
-		MaxNodes:     maxNodes,
-		TargetNodes:  target,
-		CurrentNodes: current,
+		ID:               testGroupID,
+		Name:             "node-group-97",
+		Type:             autoscaleGroupType,
+		NodeType:         "sbm",
+		MinNodes:         minNodes,
+		MaxNodes:         maxNodes,
+		AutoscaleEnabled: true,
+		TargetNodes:      target,
+		CurrentNodes:     current,
 	}
 }
