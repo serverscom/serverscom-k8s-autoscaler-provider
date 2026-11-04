@@ -74,9 +74,9 @@ func TestNodeGroupIncreaseSize(t *testing.T) {
 	p, api := newTestProvider(t)
 
 	api.EXPECT().
-		IncreaseAutoscaleNodeGroupSize(
+		IncreaseAutoscaleNodeGroupTargetSize(
 			gomock.Any(), testClusterID, testGroupID,
-			serverscom.KubernetesClusterAutoscaleNodeGroupIncreaseSizeInput{Delta: 2},
+			serverscom.KubernetesClusterAutoscaleNodeGroupIncreaseTargetSizeInput{Delta: 2},
 		).
 		Return(testGroup(1, 5, 4, 2), nil).
 		Times(1)
@@ -94,7 +94,7 @@ func TestNodeGroupIncreaseSizeRejectsNonPositiveDelta(t *testing.T) {
 		p, api := newTestProvider(t)
 
 		api.EXPECT().
-			IncreaseAutoscaleNodeGroupSize(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			IncreaseAutoscaleNodeGroupTargetSize(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 			Times(0)
 
 		_, err := p.NodeGroupIncreaseSize(context.Background(),
@@ -118,7 +118,7 @@ func TestNodeGroupIncreaseSizeSurfacesConflict(t *testing.T) {
 	}
 
 	api.EXPECT().
-		IncreaseAutoscaleNodeGroupSize(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		IncreaseAutoscaleNodeGroupTargetSize(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil, apiErr).
 		Times(1)
 

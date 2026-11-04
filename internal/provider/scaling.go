@@ -28,9 +28,9 @@ func (p *Provider) NodeGroupIncreaseSize(ctx context.Context, req *protos.NodeGr
 	ctx, cancel := p.callContext(ctx)
 	defer cancel()
 
-	input := serverscom.KubernetesClusterAutoscaleNodeGroupIncreaseSizeInput{Delta: int64(req.GetDelta())}
+	input := serverscom.KubernetesClusterAutoscaleNodeGroupIncreaseTargetSizeInput{Delta: int64(req.GetDelta())}
 
-	group, err := p.api.IncreaseAutoscaleNodeGroupSize(ctx, p.clusterID, req.GetId(), input)
+	group, err := p.api.IncreaseAutoscaleNodeGroupTargetSize(ctx, p.clusterID, req.GetId(), input)
 	if err != nil {
 		klog.V(1).Infof("NodeGroupIncreaseSize: node group %s, delta %d: %v", req.GetId(), req.GetDelta(), err)
 		return nil, toGRPCError(ctx, err)

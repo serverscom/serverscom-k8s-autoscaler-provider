@@ -31,7 +31,7 @@ func TestMutatingRPCsCallTheAPIExactlyOnce(t *testing.T) {
 			name: "increase size",
 			expect: func(api *serverscom_testing.MockKubernetesClustersService) {
 				api.EXPECT().
-					IncreaseAutoscaleNodeGroupSize(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					IncreaseAutoscaleNodeGroupTargetSize(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil, apiErr()).
 					Times(1)
 			},
