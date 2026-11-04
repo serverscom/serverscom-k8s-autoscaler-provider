@@ -261,19 +261,19 @@ func (mr *MockKubernetesClustersServiceMockRecorder) GetNode(ctx, clusterID, nod
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNode", reflect.TypeOf((*MockKubernetesClustersService)(nil).GetNode), ctx, clusterID, nodeID)
 }
 
-// IncreaseAutoscaleNodeGroupSize mocks base method.
-func (m *MockKubernetesClustersService) IncreaseAutoscaleNodeGroupSize(ctx context.Context, clusterID, nodeGroupID string, input serverscom.KubernetesClusterAutoscaleNodeGroupIncreaseSizeInput) (*serverscom.KubernetesClusterAutoscaleNodeGroup, error) {
+// IncreaseAutoscaleNodeGroupTargetSize mocks base method.
+func (m *MockKubernetesClustersService) IncreaseAutoscaleNodeGroupTargetSize(ctx context.Context, clusterID, nodeGroupID string, input serverscom.KubernetesClusterAutoscaleNodeGroupIncreaseTargetSizeInput) (*serverscom.KubernetesClusterAutoscaleNodeGroup, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IncreaseAutoscaleNodeGroupSize", ctx, clusterID, nodeGroupID, input)
+	ret := m.ctrl.Call(m, "IncreaseAutoscaleNodeGroupTargetSize", ctx, clusterID, nodeGroupID, input)
 	ret0, _ := ret[0].(*serverscom.KubernetesClusterAutoscaleNodeGroup)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// IncreaseAutoscaleNodeGroupSize indicates an expected call of IncreaseAutoscaleNodeGroupSize.
-func (mr *MockKubernetesClustersServiceMockRecorder) IncreaseAutoscaleNodeGroupSize(ctx, clusterID, nodeGroupID, input any) *gomock.Call {
+// IncreaseAutoscaleNodeGroupTargetSize indicates an expected call of IncreaseAutoscaleNodeGroupTargetSize.
+func (mr *MockKubernetesClustersServiceMockRecorder) IncreaseAutoscaleNodeGroupTargetSize(ctx, clusterID, nodeGroupID, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncreaseAutoscaleNodeGroupSize", reflect.TypeOf((*MockKubernetesClustersService)(nil).IncreaseAutoscaleNodeGroupSize), ctx, clusterID, nodeGroupID, input)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncreaseAutoscaleNodeGroupTargetSize", reflect.TypeOf((*MockKubernetesClustersService)(nil).IncreaseAutoscaleNodeGroupTargetSize), ctx, clusterID, nodeGroupID, input)
 }
 
 // MoveNodes mocks base method.

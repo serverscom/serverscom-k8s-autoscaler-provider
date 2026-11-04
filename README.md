@@ -29,7 +29,7 @@ hardware twice.
 | `NodeGroups` | `GET  /kubernetes_clusters/{id}/autoscale_node_groups?autoscale_enabled=true` |
 | `NodeGroupForNode` | `GET  .../nodes/{node_id}` then `GET .../autoscale_node_groups/{id}` |
 | `NodeGroupTargetSize` | `GET  .../autoscale_node_groups/{id}` -> `target_nodes` |
-| `NodeGroupIncreaseSize` | `POST .../increase_size` |
+| `NodeGroupIncreaseSize` | `POST .../increase_target_size` |
 | `NodeGroupDecreaseTargetSize` | `POST .../decrease_target_size` |
 | `NodeGroupDeleteNodes` | `POST .../delete_nodes` |
 | `NodeGroupNodes` | `GET  .../autoscale_node_groups/{id}/nodes` |
