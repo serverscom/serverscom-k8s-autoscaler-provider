@@ -26,6 +26,9 @@ func (p *Provider) GetAvailableGPUTypes(context.Context, *protos.GetAvailableGPU
 // This one has none: every RPC reads the Public API afresh. That is what makes a min/max edited
 // through the portal visible as soon as the autoscaler drops its own cached copy, and what
 // makes a restart or a switch to another provider instance a non-event.
+//
+// The negative cache in internal/negcache is dropped on this same call, but by its interceptor
+// before the call reaches here, so the provider itself stays without state.
 func (p *Provider) Refresh(context.Context, *protos.RefreshRequest) (*protos.RefreshResponse, error) {
 	klog.V(5).Info("Refresh: nothing to drop, the provider holds no state")
 	return &protos.RefreshResponse{}, nil
