@@ -18,11 +18,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	serverscom "github.com/serverscom/serverscom-go-client/pkg"
 	"google.golang.org/grpc"
 	klog "k8s.io/klog/v2"
 
+	"github.com/serverscom/serverscom-k8s-autoscaler-provider/internal/negcache"
 	"github.com/serverscom/serverscom-k8s-autoscaler-provider/internal/protos"
 	"github.com/serverscom/serverscom-k8s-autoscaler-provider/internal/provider"
 )
@@ -85,7 +87,9 @@ func run() error {
 
 	client.SetupUserAgent(fmt.Sprintf("serverscom-k8s-autoscaler-provider/%s", version))
 
-	grpcServer := grpc.NewServer()
+	cache := negcache.New(prometheus.DefaultRegisterer)
+
+	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(cache.UnaryServerInterceptor))
 
 	protos.RegisterCloudProviderServer(grpcServer,
 		provider.New(client.KubernetesClusters, *clusterID, *maxPods, *apiTimeout))

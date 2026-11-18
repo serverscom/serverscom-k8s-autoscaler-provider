@@ -7,6 +7,10 @@
 // one autoscaler is active, and what guarantees that a bound edited through the portal reaches
 // the autoscaler as soon as it drops its own cache on Refresh().
 //
+// The one piece of state the server does keep lives outside this package: internal/negcache
+// remembers the errors of the read-only RPCs until the next Refresh, in a gRPC interceptor in
+// front of this service. It never holds a successful answer.
+//
 // It also never retries. Increasing the size of a group is not idempotent - it shifts the
 // target size by a delta - so a retry on our side would order the hardware twice. Timeouts,
 // broken connections and 5xx responses are returned upwards and the decision is left to the
