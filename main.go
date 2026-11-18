@@ -8,14 +8,17 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	serverscom "github.com/serverscom/serverscom-go-client/pkg"
 	"google.golang.org/grpc"
 	klog "k8s.io/klog/v2"
@@ -34,7 +37,9 @@ const (
 )
 
 var (
-	address   = flag.String("address", ":8086", "The address to expose the gRPC service on.")
+	address        = flag.String("address", ":8086", "The address to expose the gRPC service on.")
+	metricsAddress = flag.String("metrics-address", ":8087",
+		"The address to expose Prometheus metrics on, at /metrics. Empty disables the endpoint.")
 	clusterID = flag.String("cluster-id", os.Getenv(clusterIDEnvKey),
 		"ID of the Kubernetes cluster to serve. Defaults to $"+clusterIDEnvKey+".")
 	maxPods = flag.Int64("max-pods", 110,
@@ -90,12 +95,28 @@ func run() error {
 		return fmt.Errorf("cannot listen on %s: %w", *address, err)
 	}
 
+	metricsServer, err := startMetricsServer(*metricsAddress)
+	if err != nil {
+		listener.Close()
+		return err
+	}
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	go func() {
 		<-ctx.Done()
 		klog.Info("shutting down")
+
+		if metricsServer != nil {
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			if err := metricsServer.Shutdown(shutdownCtx); err != nil {
+				klog.Errorf("metrics server shutdown: %v", err)
+			}
+		}
+
 		grpcServer.GracefulStop()
 	}()
 
@@ -106,4 +127,36 @@ func run() error {
 	}
 
 	return nil
+}
+
+// startMetricsServer serves /metrics on its own listener, apart from the gRPC one. It binds
+// synchronously, so a busy port fails the startup instead of going unnoticed. An empty address
+// disables the endpoint and returns a nil server.
+func startMetricsServer(address string) (*http.Server, error) {
+	if address == "" {
+		return nil, nil
+	}
+
+	listener, err := net.Listen("tcp", address)
+	if err != nil {
+		return nil, fmt.Errorf("cannot listen on %s for metrics: %w", address, err)
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.Handler())
+
+	server := &http.Server{
+		Handler:           mux,
+		ReadHeaderTimeout: 10 * time.Second,
+	}
+
+	go func() {
+		if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			klog.Errorf("metrics server failed: %v", err)
+		}
+	}()
+
+	klog.Infof("serving metrics on %s/metrics", address)
+
+	return server, nil
 }

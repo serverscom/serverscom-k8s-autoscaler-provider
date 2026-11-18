@@ -98,6 +98,7 @@ SERVERSCOM_TOKEN=... SERVERSCOM_CLUSTER_ID=... \
 | Flag | Default | |
 |---|---|---|
 | `--address` | `:8086` | address to expose the gRPC service on |
+| `--metrics-address` | `:8087` | address to expose Prometheus metrics on at `/metrics`; empty disables it |
 | `--cluster-id` | `$SERVERSCOM_CLUSTER_ID` | the cluster to serve, required |
 | `--max-pods` | `110` | pod capacity in the node template |
 | `--api-timeout` | `30s` | applied only when the incoming call carries no deadline |
@@ -114,6 +115,11 @@ One instance serves exactly one cluster.
 The listener is plaintext. Anyone who can reach it can trigger the creation and deletion of real
 hardware, so it must not be exposed beyond the autoscaler - keep it on a private network or
 behind a network policy that admits only the autoscaler pod.
+
+### Metrics
+
+`/metrics` on `--metrics-address` is a separate plain HTTP listener and never calls the API. It
+exports the standard Go and process metrics.
 
 ### Autoscaler side
 
