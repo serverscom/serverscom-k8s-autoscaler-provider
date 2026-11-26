@@ -11,11 +11,28 @@ between the bounds their owner set through the API or the portal.
 
 ## Design
 
-**Stateless.** Nothing is cached between calls, there is no coordination between instances, the
-Public API is the only source of truth. Several provider instances may run at once while exactly
-one autoscaler is active; a restart or a switch to another instance changes nothing. It also
-means `Refresh` has nothing to drop: a min/max edited through the portal reaches the autoscaler
-as soon as it drops its own cached copy.
+**Stateless, apart from errors.** No successful answer is cached between calls, there is no
+coordination between instances, the Public API is the only source of truth. Several provider
+instances may run at once while exactly one autoscaler is active; a restart or a switch to
+another instance changes nothing. A min/max edited through the portal reaches the autoscaler as
+soon as it drops its own cached copy.
+
+**Negative cache.** The autoscaler caches answers until its next `Refresh` but never caches an
+error, so while the API is failing one loop can repeat the same call a dozen times. The provider
+therefore remembers the error of a read-only RPC until the next `Refresh` and serves it back
+without calling the API:
+
+| RPC | keyed by |
+|---|---|
+| `NodeGroups` | - |
+| `NodeGroupForNode` | the node's providerID |
+| `NodeGroupTargetSize`, `NodeGroupNodes`, `NodeGroupTemplateNodeInfo` | the node group id |
+
+Any error is cached except `Canceled`, which is the autoscaler giving up rather than the API
+failing. Successful answers and the mutating RPCs are never cached: a conflict on a resize
+describes the moment, and a raised maximum has to work on the very next request. The cache lives
+in a gRPC interceptor in front of the service, so it only ever removes API calls - it is not a
+retry.
 
 **No retries.** Every API call is made exactly once. On a timeout, a broken connection or a 5xx
 the error goes up to the autoscaler, which decides what to do. Increasing the size of a group is
@@ -34,7 +51,8 @@ hardware twice.
 | `NodeGroupDeleteNodes` | `POST .../delete_nodes` |
 | `NodeGroupNodes` | `GET  .../autoscale_node_groups/{id}/nodes` |
 | `NodeGroupTemplateNodeInfo` | `GET  .../autoscale_node_groups/{id}/autoscale_template` |
-| `Refresh`, `Cleanup` | none, the provider holds no state |
+| `Refresh` | none, drops the negative cache |
+| `Cleanup` | none, the provider holds no state |
 | `GPULabel`, `GetAvailableGPUTypes` | none, empty values |
 | `PricingNodePrice`, `PricingPodPrice`, `NodeGroupGetOptions` | reported as `Unimplemented` |
 
@@ -98,6 +116,7 @@ SERVERSCOM_TOKEN=... SERVERSCOM_CLUSTER_ID=... \
 | Flag | Default | |
 |---|---|---|
 | `--address` | `:8086` | address to expose the gRPC service on |
+| `--metrics-address` | `:8087` | address to expose Prometheus metrics on at `/metrics`; empty disables it |
 | `--cluster-id` | `$SERVERSCOM_CLUSTER_ID` | the cluster to serve, required |
 | `--max-pods` | `110` | pod capacity in the node template |
 | `--api-timeout` | `30s` | applied only when the incoming call carries no deadline |
@@ -114,6 +133,18 @@ One instance serves exactly one cluster.
 The listener is plaintext. Anyone who can reach it can trigger the creation and deletion of real
 hardware, so it must not be exposed beyond the autoscaler - keep it on a private network or
 behind a network policy that admits only the autoscaler pod.
+
+### Metrics
+
+`/metrics` on `--metrics-address` is a separate plain HTTP listener and never calls the API.
+Besides the standard Go and process metrics it exports:
+
+| Metric | Labels | |
+|---|---|---|
+| `serverscom_autoscaler_provider_negative_cache_lookups_total` | `rpc`, `result` = `hit`/`miss` | a hit returned a cached error without an API call, a miss reached the provider |
+
+A high hit rate means the API is failing and the cache is absorbing the repeats; the error
+itself is in the autoscaler's log.
 
 ### Autoscaler side
 
@@ -144,5 +175,5 @@ Creating and deleting node groups (the autoscaler only moves existing ones withi
 switching autoscaling on or off for a group (the provider only reads the flag, the owner sets
 it), changing the location or flavour of an existing group, labels and taints in the node template,
 reporting provisioning failures, the price expander, GPU support, per-node-group autoscaling
-options, retries or compensating logic, transport security, health checking, static node groups,
-and serving several clusters from one instance.
+options, retries or compensating logic, caching of successful answers, transport security,
+health checking, static node groups, and serving several clusters from one instance.
